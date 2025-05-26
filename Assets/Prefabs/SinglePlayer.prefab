@@ -158,7 +158,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2631245096629699213}
   - component: {fileID: 656550325092379467}
-  - component: {fileID: 5491940720704792477}
+  - component: {fileID: 5234577142238554181}
   - component: {fileID: 298705892379460241}
   - component: {fileID: 6417292145847351751}
   - component: {fileID: 8651804461728164680}
@@ -259,7 +259,7 @@ ParticleSystemRenderer:
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
   m_MaskInteraction: 0
---- !u!114 &5491940720704792477
+--- !u!114 &5234577142238554181
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -268,28 +268,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 6432450659957990016}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 27c63be2a8918c741863160b9d9da122, type: 3}
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bulletColors:
-  - {r: 1, g: 0.8661258, b: 0.11764705, a: 1}
-  - {r: 0.28296143, g: 1, b: 0.25735295, a: 1}
-  - {r: 1, g: 0.25, b: 0.91724133, a: 1}
-  - {r: 1, g: 0.3127789, b: 0.1102941, a: 1}
-  bounceDuration: 30
-  pierceDuration: 20
-  damagePerShot: 30
-  numberOfBullets: 5
-  timeBetweenBullets: 0.2
-  angleBetweenBullets: 10
-  range: 100
-  shootableMask:
-    serializedVersion: 2
-    m_Bits: 2560
-  bounceImage: {fileID: 0}
-  pierceImage: {fileID: 0}
-  bullet: {fileID: 100000, guid: d6c526ea9d76cdd468b8425ad07a3ded, type: 3}
-  bulletSpawnAnchor: {fileID: 821606795642072328}
+  GlobalObjectIdHash: 336160164
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!198 &298705892379460241
 ParticleSystem:
   m_ObjectHideFlags: 0
@@ -5347,6 +5337,7 @@ GameObject:
   - component: {fileID: 8272512151457632455}
   - component: {fileID: 3086117264996671665}
   - component: {fileID: 3652940751492738961}
+  - component: {fileID: 7295266563491333509}
   m_Layer: 9
   m_Name: SinglePlayer
   m_TagString: Player
@@ -5609,6 +5600,37 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerCamera: {fileID: 735709815866115840}
+--- !u!114 &7295266563491333509
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8887309348447092257}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27c63be2a8918c741863160b9d9da122, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bulletColors:
+  - {r: 1, g: 0.8661258, b: 0.11764705, a: 1}
+  - {r: 0.28296143, g: 1, b: 0.25735295, a: 1}
+  - {r: 1, g: 0.25, b: 0.91724133, a: 1}
+  - {r: 1, g: 0.3127789, b: 0.1102941, a: 1}
+  bounceDuration: 30
+  pierceDuration: 20
+  damagePerShot: 30
+  numberOfBullets: 5
+  timeBetweenBullets: 0.2
+  angleBetweenBullets: 10
+  range: 100
+  shootableMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  bounceImage: {fileID: 0}
+  pierceImage: {fileID: 0}
+  bullet: {fileID: 100000, guid: d6c526ea9d76cdd468b8425ad07a3ded, type: 3}
+  bulletSpawnAnchor: {fileID: 821606795642072328}
 --- !u!1 &9145628869823457865
 GameObject:
   m_ObjectHideFlags: 0
