@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: e1b91a26c975eba47a7b2bfc52dd4d3f
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - aiManager: {instanceID: 0}
+  - gameOverManager: {instanceID: 0}
+  - pickupManager: {instanceID: 0}
+  - scoreManager: {instanceID: 0}
+  - networkManagerPrefab: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
