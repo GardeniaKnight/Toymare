@@ -34,21 +34,30 @@ public class GameInitializer : MonoBehaviour
     }
 
     void InitSinglePlayer()
-    {
-        if (aiManager != null) aiManager.SetActive(true);
-        if (gameOverManager != null) gameOverManager.SetActive(true);
-        if (pickupManager != null) pickupManager.SetActive(true);
-        if (scoreManager != null) scoreManager.SetActive(true);
+{
+    // 启用仅单人使用的组件
+    if (aiManager != null) aiManager.SetActive(true);
+    if (gameOverManager != null) gameOverManager.SetActive(true);
+    if (pickupManager != null) pickupManager.SetActive(true);
+    if (scoreManager != null) scoreManager.SetActive(true);
 
-        if (singlePlayerPrefab != null)
+    if (singlePlayerPrefab != null)
+    {
+        GameObject player = Instantiate(singlePlayerPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+
+        // ✅ 只在单人模式中绑定 WaveManager
+        WaveManager waveManager = FindObjectOfType<WaveManager>();
+        if (waveManager != null)
         {
-            Instantiate(singlePlayerPrefab, new Vector3(0, 0, 0), Quaternion.identity);
-        }
-        else
-        {
-            Debug.LogWarning("SinglePlayerPrefab 未指定！");
+            var playerHealth = player.GetComponent<PlayerHealth>();
+            if (playerHealth != null)
+            {
+                waveManager.playerHealth = playerHealth;
+                Debug.Log("✅ WaveManager 绑定成功");
+            }
         }
     }
+}
 
     void InitMultiplayer()
     {
