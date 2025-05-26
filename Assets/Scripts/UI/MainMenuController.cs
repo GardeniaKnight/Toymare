@@ -5,13 +5,13 @@ using System.Collections;
 
 public class MainMenuController : MonoBehaviour
 {
-    public Image fadeImage;                  // 用于黑屏淡入的 Image（全屏黑色）
-    public float fadeDuration = 1.5f;        // 淡入时长
-    public GameObject menuUI;                // 包含按钮的 UI 容器（Canvas 下）
+    public Image fadeImage;
+    public float fadeDuration = 1.5f;
+    public GameObject menuUI;
 
     void Start()
     {
-        menuUI.SetActive(false); // 先隐藏按钮
+        menuUI.SetActive(false);
         StartCoroutine(FadeIn());
     }
 
@@ -27,23 +27,26 @@ public class MainMenuController : MonoBehaviour
             yield return null;
         }
         fadeImage.color = new Color(0, 0, 0, 0);
-        menuUI.SetActive(true); // 淡入后显示按钮
+        menuUI.SetActive(true);
     }
 
-    // 下面是按钮事件函数
+    // ✅ 单人按钮：设置为 SinglePlayer
     public void OnSinglePlayerClicked()
     {
-        SceneManager.LoadScene("SingleLevel 01"); // 替换为你的单人场景名
+        GameModeManager.CurrentMode = GameMode.SinglePlayer;
+        SceneManager.LoadScene("Game");
     }
 
+    // ✅ 多人按钮：设置为 MultiPlayer
     public void OnMultiplayerClicked()
     {
-        SceneManager.LoadScene("MultiplayerScene"); // 替换为你的多人场景名
+        GameModeManager.CurrentMode = GameMode.MultiPlayer;
+        SceneManager.LoadScene("Game");
     }
 
     public void OnQuitClicked()
     {
-        Application.Quit(); // 退出游戏
-        Debug.Log("Quit Game"); // 编辑器中看不到退出，打印日志方便测试
+        Application.Quit();
+        Debug.Log("Quit Game");
     }
 }
