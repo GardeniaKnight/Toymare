@@ -10,6 +10,9 @@ public class GameInitializer : MonoBehaviour
     public GameObject pickupManager;
     public GameObject scoreManager;
 
+    [Header("仅单人模式使用的 Player Prefab")]
+    public GameObject singlePlayerPrefab;
+
     [Header("仅多人模式启用的 NetworkManager 预制体")]
     public GameObject networkManagerPrefab;
 
@@ -36,6 +39,15 @@ public class GameInitializer : MonoBehaviour
         if (gameOverManager != null) gameOverManager.SetActive(true);
         if (pickupManager != null) pickupManager.SetActive(true);
         if (scoreManager != null) scoreManager.SetActive(true);
+
+        if (singlePlayerPrefab != null)
+        {
+            Instantiate(singlePlayerPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+        }
+        else
+        {
+            Debug.LogWarning("SinglePlayerPrefab 未指定！");
+        }
     }
 
     void InitMultiplayer()
@@ -45,7 +57,6 @@ public class GameInitializer : MonoBehaviour
         if (pickupManager != null) pickupManager.SetActive(false);
         if (scoreManager != null) scoreManager.SetActive(false);
 
-        // 启动网络
         if (NetworkManager.Singleton == null && networkManagerPrefab != null)
         {
             Instantiate(networkManagerPrefab);
@@ -53,7 +64,7 @@ public class GameInitializer : MonoBehaviour
 
         if (NetworkManager.Singleton != null)
         {
-            NetworkManager.Singleton.StartHost(); // 你可以按需改为 StartClient
+            NetworkManager.Singleton.StartHost(); // 或 StartClient()
         }
         else
         {
