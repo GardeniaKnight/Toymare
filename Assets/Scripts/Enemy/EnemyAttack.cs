@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 
 public class EnemyAttack : MonoBehaviour {
@@ -21,24 +21,22 @@ public class EnemyAttack : MonoBehaviour {
 	
 	void Awake() {
 		// Setting up the references.
-		player = GameObject.FindGameObjectWithTag("Player");
-		playerHealth = player.GetComponent<PlayerHealth>();
+		// player = GameObject.FindGameObjectWithTag("Player");
+		// playerHealth = player.GetComponent<PlayerHealth>();
 		enemyHealth = GetComponent<EnemyHealth>();
 	}
 
 	void OnTriggerEnter(Collider other) {
-		// If the entering collider is the player the player is in range.
-		if (other.gameObject == player) {
+		if (other.CompareTag("Player")) {
+			player = other.gameObject;
+			playerHealth = player.GetComponent<PlayerHealth>();
 			playerInRange = true;
-			// Add a slight "reaction time".
 			timer = 0.2f;
 		}
 	}
-	
-	
+
 	void OnTriggerExit(Collider other) {
-		// If the exiting collider is the player the player is no longer in range.
-		if (other.gameObject == player) { 
+		if (other.gameObject == player) {
 			playerInRange = false;
 		}
 	}
@@ -59,8 +57,12 @@ public class EnemyAttack : MonoBehaviour {
 	void Attack() {
 		// Reset the timer.
 		timer = 0f;
-		
-		// Damage the player.
+
+		if (playerHealth == null) {
+			Debug.LogWarning("[EnemyAttack] 找不到玩家或 PlayerHealth，跳过攻击");
+			return;
+		}
+
 		playerHealth.TakeDamage(attackDamage);
 	}
 }
