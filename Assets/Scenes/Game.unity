@@ -8742,16 +8742,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 96555853c2db20346863c09bb29cb06c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  target: {fileID: 0}
-  offset: {x: 0, y: 0, z: 0}
-  smoothing: 5
-  followOnStart: 1
-  lockY: 0
-  minX: -999
-  maxX: 999
-  minZ: -999
-  maxZ: 999
-  useBounds: 0
 --- !u!223 &1410090267
 Canvas:
   m_ObjectHideFlags: 0
