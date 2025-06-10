@@ -41,22 +41,34 @@ public class GameInitializer : MonoBehaviour
     if (pickupManager != null) pickupManager.SetActive(true);
     if (scoreManager != null) scoreManager.SetActive(true);
 
-    if (singlePlayerPrefab != null)
-    {
-        GameObject player = Instantiate(singlePlayerPrefab, new Vector3(0, 0, 0), Quaternion.identity);
-
-        // ✅ 只在单人模式中绑定 WaveManager
-        WaveManager waveManager = FindObjectOfType<WaveManager>();
-        if (waveManager != null)
+        if (singlePlayerPrefab != null)
         {
-            var playerHealth = player.GetComponent<PlayerHealth>();
-            if (playerHealth != null)
+            GameObject player = Instantiate(singlePlayerPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+
+            // ✅ 只在单人模式中绑定 WaveManager
+            WaveManager waveManager = FindObjectOfType<WaveManager>();
+            if (waveManager != null)
             {
-                waveManager.playerHealth = playerHealth;
-                Debug.Log("✅ WaveManager 绑定成功");
+                var playerHealth = player.GetComponent<PlayerHealth>();
+                if (playerHealth != null)
+                {
+                    waveManager.playerHealth = playerHealth;
+                    Debug.Log("✅ WaveManager 绑定成功");
+                }
             }
+            // 生成 Player 后……
+            PlayerHealth ph = player.GetComponent<PlayerHealth>();
+            // 绑定给 GameOverManager
+            if (gameOverManager != null && ph != null)
+                gameOverManager.GetComponent<GameOverManager>().playerHealth = ph;
+            
+            // 2. 找到场景里的 HUD
+            PlayerHUD hud = FindObjectOfType<PlayerHUD>();
+
+            // 3. 把 HUD 推给 PlayerHealth
+            ph.healthSliderForeground = hud.foreground;
+            ph.healthSliderBackground = hud.background;
         }
-    }
 }
 
     void InitMultiplayer()
