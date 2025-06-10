@@ -61,6 +61,7 @@ public class WaveManager : MonoBehaviour
 
     void Start()
     {
+        Debug.Log("WaveManager.Start() is called");
         // Let us start on a higher wave and difficulty if we wish.
         waveNumber = startingWave > 0 ? startingWave - 1 : 0;
         difficulty = startingDifficulty;
@@ -147,51 +148,118 @@ public class WaveManager : MonoBehaviour
      * actual spawn and our enemies will spawn very irregularly. I guess that just 
      * makes it seem more random though. And I'm lazy. :p
      */
+    // void Spawn(Wave.Entry entry)
+    // {
+    //     // Reset the timer.
+    //     timer = 0f;
+
+    //     // If the player has no health left, stop spawning.
+    //     if (playerHealth.currentHealth <= 0f)
+    //     {
+    //         return;
+    //     }
+
+    //     // Find a random position roughly on the level.
+    //     Vector3 randomPosition = Random.insideUnitSphere * 35;
+    //     randomPosition.y = 0;
+
+    //     // Find the closest position on the nav mesh to our random position.
+    //     // If we can't find a valid position return and try again.
+    //     UnityEngine.AI.NavMeshHit hit;
+    //     if (!UnityEngine.AI.NavMesh.SamplePosition(randomPosition, out hit, 5, 1))
+    //     {
+    //         return;
+    //     }
+
+    //     // We have a valid spawn position on the nav mesh.
+    //     spawnPosition = hit.position;
+
+    //     // Check if this position is visible on the screen, if it is we
+    //     // return and try again.
+    //     Vector3 screenPos = Camera.main.WorldToScreenPoint(spawnPosition);
+    //     if ((screenPos.x > -bufferDistance && screenPos.x < (Screen.width + bufferDistance)) &&
+    //         (screenPos.y > -bufferDistance && screenPos.y < (Screen.height + bufferDistance)))
+    //     {
+    //         return;
+    //     }
+
+    //     // We passed all the checks, spawn our enemy.
+    //     GameObject enemy = Instantiate(entry.enemy, spawnPosition, Quaternion.identity) as GameObject;
+    //     // Multiply health and score value by the current difficulty.
+    //     enemy.GetComponent<EnemyHealth>().startingHealth *= difficulty;
+    //     enemy.GetComponent<EnemyHealth>().scoreValue *= difficulty;
+
+    //     entry.spawned++;
+    //     spawnedThisWave++;
+    //     enemiesAlive++;
+    // }
+
     void Spawn(Wave.Entry entry)
     {
-        // Reset the timer.
+        Debug.Log("正在尝试生成怪物：" + entry.enemy.name);
         timer = 0f;
 
-        // If the player has no health left, stop spawning.
         if (playerHealth.currentHealth <= 0f)
+            return;
+
+        const int maxAttempts = 10;
+        bool foundPosition = false;
+
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
+            // 在玩家周围一定范围内随机找一个点（例如半径 40）
+            Vector3 randomPosition = playerHealth.transform.position + Random.insideUnitSphere * 40f;
+            randomPosition.y = 0;
+
+            UnityEngine.AI.NavMeshHit hit;
+            if (UnityEngine.AI.NavMesh.SamplePosition(randomPosition, out hit, 10f, UnityEngine.AI.NavMesh.AllAreas))
+            {
+                spawnPosition = hit.position;
+                foundPosition = true;
+                break;
+            }
+        }
+
+        if (!foundPosition)
+        {
+            Debug.LogWarning("⚠️ 找不到合法的刷怪位置，跳过这次生成。");
             return;
         }
 
-        // Find a random position roughly on the level.
-        Vector3 randomPosition = Random.insideUnitSphere * 35;
-        randomPosition.y = 0;
+        Debug.Log("🧟 正在尝试生成怪物：" + (entry.enemy != null ? entry.enemy.name : "❌ entry.enemy is NULL"));
 
-        // Find the closest position on the nav mesh to our random position.
-        // If we can't find a valid position return and try again.
-        UnityEngine.AI.NavMeshHit hit;
-        if (!UnityEngine.AI.NavMesh.SamplePosition(randomPosition, out hit, 5, 1))
+        if (entry.enemy == null)
         {
+            Debug.LogError("❌ entry.enemy 是 NULL，无法生成怪物！");
             return;
         }
 
-        // We have a valid spawn position on the nav mesh.
-        spawnPosition = hit.position;
+        GameObject enemy = Instantiate(entry.enemy, spawnPosition, Quaternion.identity);
 
-        // Check if this position is visible on the screen, if it is we
-        // return and try again.
-        Vector3 screenPos = Camera.main.WorldToScreenPoint(spawnPosition);
-        if ((screenPos.x > -bufferDistance && screenPos.x < (Screen.width + bufferDistance)) &&
-            (screenPos.y > -bufferDistance && screenPos.y < (Screen.height + bufferDistance)))
+        if (enemy == null)
         {
+            Debug.LogError("❌ Instantiate 返回 NULL，生成失败！");
             return;
         }
+        else
+        {
+            Debug.Log("✅ Instantiate 成功: " + enemy.name + " | Pos: " + enemy.transform.position);
+        }
 
-        // We passed all the checks, spawn our enemy.
-        GameObject enemy = Instantiate(entry.enemy, spawnPosition, Quaternion.identity) as GameObject;
-        // Multiply health and score value by the current difficulty.
-        enemy.GetComponent<EnemyHealth>().startingHealth *= difficulty;
-        enemy.GetComponent<EnemyHealth>().scoreValue *= difficulty;
+
+        // ✅ 应用难度倍率
+        EnemyHealth eh = enemy.GetComponent<EnemyHealth>();
+        if (eh != null)
+        {
+            eh.startingHealth *= difficulty;
+            eh.scoreValue *= difficulty;
+        }
 
         entry.spawned++;
         spawnedThisWave++;
         enemiesAlive++;
     }
+
 
     /**
      * Set up all our waves of enemies.
