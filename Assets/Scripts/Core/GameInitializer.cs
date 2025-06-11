@@ -1,6 +1,6 @@
 using UnityEngine;
-using Unity.Netcode;
 using UnityEngine.SceneManagement;
+using Photon.Pun;
 
 public class GameInitializer : MonoBehaviour
 {
@@ -10,11 +10,13 @@ public class GameInitializer : MonoBehaviour
     public GameObject pickupManager;
     public GameObject scoreManager;
 
-    [Header("仅单人模式使用的 Player Prefab")]
+    [Header("仅单人模式使用的 Player 预制体")]
     public GameObject singlePlayerPrefab;
 
-    [Header("仅多人模式启用的 NetworkManager 预制体")]
-    public GameObject networkManagerPrefab;
+    [Header("仅多人模式使用的 Player 预制体")]
+    public GameObject multiplayerPlayerPrefab;
+    [Tooltip("在场景中预先布置的出生点")]
+    public Transform[] spawnPoints;
 
     void Start()
     {
@@ -28,68 +30,86 @@ public class GameInitializer : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("未知游戏模式，回到主菜单");
+            Debug.LogWarning("未知游戏模式，返回主菜单");
             SceneManager.LoadScene("MainMenu");
         }
     }
 
     void InitSinglePlayer()
-{
-    // 启用仅单人使用的组件
-    if (aiManager != null) aiManager.SetActive(true);
-    if (gameOverManager != null) gameOverManager.SetActive(true);
-    if (pickupManager != null) pickupManager.SetActive(true);
-    if (scoreManager != null) scoreManager.SetActive(true);
+    {
+        // 启用单人模块
+        aiManager?.SetActive(true);
+        gameOverManager?.SetActive(true);
+        pickupManager?.SetActive(true);
+        scoreManager?.SetActive(true);
 
         if (singlePlayerPrefab != null)
         {
-            GameObject player = Instantiate(singlePlayerPrefab, new Vector3(0, 0, 0), Quaternion.identity);
+            // 在原点生成单人玩家
+            GameObject player = Instantiate(
+                singlePlayerPrefab,
+                Vector3.zero,
+                Quaternion.identity
+            );
 
-            // ✅ 只在单人模式中绑定 WaveManager
+            // 绑定 WaveManager
             WaveManager waveManager = FindObjectOfType<WaveManager>();
             if (waveManager != null)
             {
-                var playerHealth = player.GetComponent<PlayerHealth>();
-                if (playerHealth != null)
+                var ph = player.GetComponent<PlayerHealth>();
+                if (ph != null)
                 {
-                    waveManager.playerHealth = playerHealth;
-                    Debug.Log("✅ WaveManager 绑定成功");
+                    waveManager.playerHealth = ph;
                 }
             }
-            // 生成 Player 后……
-            PlayerHealth ph = player.GetComponent<PlayerHealth>();
-            // 绑定给 GameOverManager
-            if (gameOverManager != null && ph != null)
-                gameOverManager.GetComponent<GameOverManager>().playerHealth = ph;
-            
-            // 2. 找到场景里的 HUD
-            PlayerHUD hud = FindObjectOfType<PlayerHUD>();
 
-            // 3. 把 HUD 推给 PlayerHealth
-            ph.healthSliderForeground = hud.foreground;
-            ph.healthSliderBackground = hud.background;
+            // 绑定 GameOverManager
+            var playerHealth = player.GetComponent<PlayerHealth>();
+            if (gameOverManager != null && playerHealth != null)
+            {
+                gameOverManager
+                    .GetComponent<GameOverManager>()
+                    .playerHealth = playerHealth;
+            }
+
+            // 绑定 HUD
+            PlayerHUD hud = FindObjectOfType<PlayerHUD>();
+            if (hud != null && playerHealth != null)
+            {
+                playerHealth.healthSliderForeground = hud.foreground;
+                playerHealth.healthSliderBackground = hud.background;
+            }
         }
-}
+    }
 
     void InitMultiplayer()
     {
-        if (aiManager != null) aiManager.SetActive(false);
-        if (gameOverManager != null) gameOverManager.SetActive(false);
-        if (pickupManager != null) pickupManager.SetActive(false);
-        if (scoreManager != null) scoreManager.SetActive(false);
+        // 禁用所有单人专属模块
+        aiManager?.SetActive(false);
+        gameOverManager?.SetActive(false);
+        pickupManager?.SetActive(false);
+        scoreManager?.SetActive(false);
 
-        if (NetworkManager.Singleton == null && networkManagerPrefab != null)
+        // 仅在已加入 Photon 房间时生成玩家
+        if (PhotonNetwork.InRoom 
+            && multiplayerPlayerPrefab != null 
+            && spawnPoints != null 
+            && spawnPoints.Length > 0)
         {
-            Instantiate(networkManagerPrefab);
-        }
+            // 按 ActorNumber 分配出生点
+            int index = (PhotonNetwork.LocalPlayer.ActorNumber - 1)
+                        % spawnPoints.Length;
+            Transform sp = spawnPoints[index];
 
-        if (NetworkManager.Singleton != null)
-        {
-            NetworkManager.Singleton.StartHost(); // 或 StartClient()
+            PhotonNetwork.Instantiate(
+                multiplayerPlayerPrefab.name,
+                sp.position,
+                sp.rotation
+            );
         }
         else
         {
-            Debug.LogError("NetworkManager 启动失败，请检查配置");
+            Debug.LogWarning("多人模式：尚未加入房间或未配置预制体/出生点");
         }
     }
 }
