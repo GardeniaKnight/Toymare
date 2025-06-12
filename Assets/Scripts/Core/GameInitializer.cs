@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.AI;
 using Photon.Pun;
 
 public class GameInitializer : MonoBehaviour
@@ -17,6 +18,11 @@ public class GameInitializer : MonoBehaviour
     public GameObject multiplayerPlayerPrefab;
     [Tooltip("在场景中预先布置的出生点")]
     public Transform[] spawnPoints;
+
+    // NavMesh 贴点参数
+    [Header("NavMesh 贴地参数")]
+    [Tooltip("在原始 spawnPoints 半径内采样")]
+    public float navSampleRadius = 5f;
 
     void Start()
     {
@@ -58,9 +64,7 @@ public class GameInitializer : MonoBehaviour
             {
                 var ph = player.GetComponent<PlayerHealth>();
                 if (ph != null)
-                {
                     waveManager.playerHealth = ph;
-                }
             }
 
             // 绑定 GameOverManager
@@ -84,32 +88,47 @@ public class GameInitializer : MonoBehaviour
 
     void InitMultiplayer()
     {
-        // 禁用所有单人专属模块
+        // 确保模式已标记
+        GameModeManager.CurrentMode = GameMode.MultiPlayer;
+
+        // 禁用单人模块
         aiManager?.SetActive(false);
         gameOverManager?.SetActive(false);
         pickupManager?.SetActive(false);
         scoreManager?.SetActive(false);
 
-        // 仅在已加入 Photon 房间时生成玩家
-        if (PhotonNetwork.InRoom 
-            && multiplayerPlayerPrefab != null 
-            && spawnPoints != null 
-            && spawnPoints.Length > 0)
+        if (!PhotonNetwork.InRoom ||
+            multiplayerPlayerPrefab == null ||
+            spawnPoints == null ||
+            spawnPoints.Length == 0)
         {
-            // 按 ActorNumber 分配出生点
-            int index = (PhotonNetwork.LocalPlayer.ActorNumber - 1)
-                        % spawnPoints.Length;
-            Transform sp = spawnPoints[index];
+            Debug.LogWarning("多人模式：尚未加入房间或未配置预制体/出生点");
+            return;
+        }
 
-            PhotonNetwork.Instantiate(
-                multiplayerPlayerPrefab.name,
-                sp.position,
-                sp.rotation
-            );
+        // 随机选择一个 spawn point
+        int idx = Random.Range(0, spawnPoints.Length);
+        Vector3 rawPos = spawnPoints[idx].position;
+        Quaternion rawRot = spawnPoints[idx].rotation;
+
+        // 在 NavMesh 上寻找最近的可行走位置
+        NavMeshHit hit;
+        Vector3 spawnPos;
+        if (NavMesh.SamplePosition(rawPos, out hit, navSampleRadius, NavMesh.AllAreas))
+        {
+            spawnPos = hit.position;
         }
         else
         {
-            Debug.LogWarning("多人模式：尚未加入房间或未配置预制体/出生点");
+            spawnPos = rawPos;
+            Debug.LogWarning($"SpawnPoint '{spawnPoints[idx].name}' 未能采样 NavMesh，使用原始位置");
         }
+
+        // 网络实例化玩家
+        PhotonNetwork.Instantiate(
+            multiplayerPlayerPrefab.name,
+            spawnPos,
+            rawRot
+        );
     }
 }

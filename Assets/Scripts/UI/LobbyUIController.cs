@@ -70,6 +70,7 @@ public class LobbyUIController : MonoBehaviour
 
     void HandleJoined(string roomName)
     {
+        GameModeManager.CurrentMode = GameMode.MultiPlayer;
         ShowStatus($"已加入房间：{roomName}，等待其他玩家...");
     }
 

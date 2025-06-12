@@ -40,6 +40,7 @@ public class RoomGameManager : MonoBehaviourPunCallbacks
         if (count >= minPlayers)
         {
             hasStarted = true;
+            GameModeManager.CurrentMode = GameMode.MultiPlayer;
             Debug.Log($"RoomGameManager: 人数 {count} 达标({minPlayers})，Master 正在加载 {gameSceneName}");
             PhotonNetwork.LoadLevel(gameSceneName);
         }
