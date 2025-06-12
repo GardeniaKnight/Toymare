@@ -155,7 +155,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2305340055
+  GlobalObjectIdHash: 693108932
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -5578,13 +5578,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   startingHealth: 100
   invulnerabilityTime: 1
-  timeAfterWeLastTookDamage: 1
+  timeAfterLastDamage: 1
   healthSliderForeground: {fileID: 0}
   healthSliderBackground: {fileID: 0}
   damageImage: {fileID: 0}
   deathClip: {fileID: 8300000, guid: d36a393bca4582043982db9089e1694f, type: 3}
   flashSpeed: 5
-  flashColour: {r: 1, g: 0, b: 0, a: 0.39215687}
+  flashColor: {r: 1, g: 0, b: 0, a: 0.35}
   currentHealth: 0
 --- !u!81 &577500885966773219
 AudioListener:
@@ -5632,6 +5632,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27c63be2a8918c741863160b9d9da122, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  bulletPrefab: {fileID: 100000, guid: d6c526ea9d76cdd468b8425ad07a3ded, type: 3}
+  bulletSpawnAnchor: {fileID: 2719843526529602850}
+  timeBetweenBullets: 0.2
+  numberOfBullets: 5
+  angleBetweenBullets: 10
+  bounceImage: {fileID: 0}
+  pierceImage: {fileID: 0}
   bulletColors:
   - {r: 1, g: 0.8661258, b: 0.11764705, a: 1}
   - {r: 0.28296143, g: 1, b: 0.25735295, a: 1}
@@ -5639,18 +5646,10 @@ MonoBehaviour:
   - {r: 1, g: 0.3127789, b: 0.1102941, a: 1}
   bounceDuration: 30
   pierceDuration: 20
-  damagePerShot: 30
-  numberOfBullets: 5
-  timeBetweenBullets: 0.2
-  angleBetweenBullets: 10
-  range: 100
-  shootableMask:
-    serializedVersion: 2
-    m_Bits: 2560
-  bounceImage: {fileID: 0}
-  pierceImage: {fileID: 0}
-  bullet: {fileID: 100000, guid: d6c526ea9d76cdd468b8425ad07a3ded, type: 3}
-  bulletSpawnAnchor: {fileID: 2719843526529602850}
+  gunAudio: {fileID: 0}
+  gunLight: {fileID: 0}
+  gunParticles: {fileID: 0}
+  effectsDisplayTime: 0.2
 --- !u!114 &5974970218249635135
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -80,44 +80,44 @@
 // }
 
 using UnityEngine;
-using Photon.Pun;  // 新增
+using Photon.Pun;
 
 public class PlayerMovement : MonoBehaviourPun
 {
+    [Header("移动速度")]
     public float speed = 6f;
 
+    // 私有字段
     Vector3 movement;
     Animator anim;
     Rigidbody playerRigidbody;
     int floorMask;
-    float camRayLength = 100f;
-
     Camera mainCamera;
 
     void Awake()
     {
-        // 如果这不是本地玩家，禁用脚本
-        if (!photonView.IsMine)
+
+        // 只要挂了 PhotonView 且又不是本地，就立刻禁用组件
+        if (photonView != null && !photonView.IsMine)
         {
             enabled = false;
             return;
         }
-
-        floorMask = LayerMask.GetMask("Floor");
-        anim = GetComponent<Animator>();
+        // 初始化组件引用（单/多人都需要）
+        anim            = GetComponent<Animator>();
         playerRigidbody = GetComponent<Rigidbody>();
-        mainCamera = Camera.main;
-    }
+        floorMask       = LayerMask.GetMask("Floor");
+        mainCamera      = Camera.main;
 
-    void Start()
-    {
-        // 再次保证主摄像机引用
-        if (mainCamera == null) mainCamera = Camera.main;
+        
     }
 
     void FixedUpdate()
     {
-        // 只在本地玩家实例上执行
+        // 只有启用脚本后才响应输入
+        if (!enabled) return;
+
+        // 在多人模式下，这里一定是本地玩家；在单人模式也可以直接执行
         float h = Input.GetAxisRaw("Horizontal");
         float v = Input.GetAxisRaw("Vertical");
 
@@ -128,6 +128,13 @@ public class PlayerMovement : MonoBehaviourPun
 
     void Move(float h, float v)
     {
+        // 确保有摄像机引用
+        if (mainCamera == null)
+            mainCamera = Camera.main;
+        if (mainCamera == null)
+            return;
+
+        // 计算基于摄像机朝向的移动
         Vector3 camForward = mainCamera.transform.forward;
         camForward.y = 0f;
         camForward.Normalize();
@@ -138,6 +145,8 @@ public class PlayerMovement : MonoBehaviourPun
 
         Vector3 desiredMove = (camForward * v + camRight * h).normalized;
         movement = desiredMove * speed * Time.deltaTime;
+
+        // 实际移动
         playerRigidbody.MovePosition(transform.position + movement);
     }
 
@@ -157,3 +166,4 @@ public class PlayerMovement : MonoBehaviourPun
         anim.SetBool("IsWalking", walking);
     }
 }
+
