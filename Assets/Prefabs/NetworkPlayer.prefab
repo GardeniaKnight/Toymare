@@ -155,7 +155,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 520371614
+  GlobalObjectIdHash: 693108932
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -5356,6 +5356,8 @@ GameObject:
   - component: {fileID: 7295035679364396671}
   - component: {fileID: 5006961133220490066}
   - component: {fileID: 110137769759072627}
+  - component: {fileID: 5974970218249635135}
+  - component: {fileID: 580414669526246292}
   m_Layer: 9
   m_Name: NetworkPlayer
   m_TagString: Player
@@ -5575,15 +5577,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   startingHealth: 100
-  currentHealth: 0
   invulnerabilityTime: 1
-  timeAfterWeLastTookDamage: 1
+  timeAfterLastDamage: 1
   healthSliderForeground: {fileID: 0}
   healthSliderBackground: {fileID: 0}
   damageImage: {fileID: 0}
   deathClip: {fileID: 8300000, guid: d36a393bca4582043982db9089e1694f, type: 3}
   flashSpeed: 5
-  flashColour: {r: 1, g: 0, b: 0, a: 0.39215687}
+  flashColor: {r: 1, g: 0, b: 0, a: 0.35}
+  currentHealth: 0
 --- !u!81 &577500885966773219
 AudioListener:
   m_ObjectHideFlags: 0
@@ -5630,6 +5632,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27c63be2a8918c741863160b9d9da122, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  bulletPrefab: {fileID: 100000, guid: d6c526ea9d76cdd468b8425ad07a3ded, type: 3}
+  bulletSpawnAnchor: {fileID: 2719843526529602850}
+  timeBetweenBullets: 0.2
+  numberOfBullets: 5
+  angleBetweenBullets: 10
+  bounceImage: {fileID: 0}
+  pierceImage: {fileID: 0}
   bulletColors:
   - {r: 1, g: 0.8661258, b: 0.11764705, a: 1}
   - {r: 0.28296143, g: 1, b: 0.25735295, a: 1}
@@ -5637,18 +5646,49 @@ MonoBehaviour:
   - {r: 1, g: 0.3127789, b: 0.1102941, a: 1}
   bounceDuration: 30
   pierceDuration: 20
-  damagePerShot: 30
-  numberOfBullets: 5
-  timeBetweenBullets: 0.2
-  angleBetweenBullets: 10
-  range: 100
-  shootableMask:
-    serializedVersion: 2
-    m_Bits: 2560
-  bounceImage: {fileID: 0}
-  pierceImage: {fileID: 0}
-  bullet: {fileID: 100000, guid: d6c526ea9d76cdd468b8425ad07a3ded, type: 3}
-  bulletSpawnAnchor: {fileID: 2719843526529602850}
+  gunAudio: {fileID: 0}
+  gunLight: {fileID: 0}
+  gunParticles: {fileID: 0}
+  effectsDisplayTime: 0.2
+--- !u!114 &5974970218249635135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7636205306008556873}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa584fbee541324448dd18d8409c7a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ObservedComponentsFoldoutOpen: 1
+  Group: 0
+  prefixField: -1
+  Synchronization: 3
+  OwnershipTransfer: 0
+  observableSearch: 0
+  ObservedComponents:
+  - {fileID: 580414669526246292}
+  sceneViewId: 0
+  InstantiationId: 0
+  isRuntimeInstantiated: 0
+--- !u!114 &580414669526246292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7636205306008556873}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 627855c7f81362d41938ffe0b1475957, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SynchronizePosition: 1
+  m_SynchronizeRotation: 1
+  m_SynchronizeScale: 0
+  m_UseLocal: 1
 --- !u!1 &9221083138111215957
 GameObject:
   m_ObjectHideFlags: 0

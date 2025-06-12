@@ -41,7 +41,8 @@ public class MainMenuController : MonoBehaviour
     public void OnMultiplayerClicked()
     {
         GameModeManager.CurrentMode = GameMode.MultiPlayer;
-        SceneManager.LoadScene("Game");
+        Debug.Log("已进入多人模式");
+        SceneManager.LoadScene("LobbyScene");    // 改成先去 Lobby 场景
     }
 
     public void OnQuitClicked()
