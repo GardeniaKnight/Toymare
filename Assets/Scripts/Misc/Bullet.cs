@@ -275,33 +275,266 @@
 //     }
 // }
 
+// using UnityEngine;
+// using System.Collections;
+// using System.Collections.Generic;
+// using Photon.Pun;
+
+// public class Bullet : MonoBehaviourPun
+// {
+//     // 子弹速度 
+//     public float speed = 600.0f;
+//     // 子弹生存时间
+//     public float life = 3f;
+//     // 粒子系统
+//     public ParticleSystem normalTrailParticles;
+//     public ParticleSystem bounceTrailParticles;
+//     public ParticleSystem pierceTrailParticles;
+//     public ParticleSystem ImpactParticles;
+//     // 伤害值
+//     public int damage = 20;
+//     // 穿透 / 反弹
+//     public bool piercing = false;
+//     public bool bounce = false;
+//     // 子弹颜色
+//     public Color bulletColor;
+//     public AudioClip bounceSound;
+//     public AudioClip hitSound;
+
+//     // 内部状态
+//     private Vector3 velocity;
+//     private Vector3 newPos;
+//     private Vector3 oldPos;
+//     private Vector3 direction;
+//     private bool hasHit = false;
+//     private RaycastHit lastHit;
+//     private AudioSource bulletAudio;
+//     private float timer;
+
+//     void Awake()
+//     {
+//         bulletAudio = GetComponent<AudioSource>();
+//     }
+
+//     void Start()
+//     {
+//         newPos = transform.position;
+//         oldPos = newPos;
+
+//         // 设置粒子颜色
+//         normalTrailParticles.startColor = bulletColor;
+//         bounceTrailParticles.startColor = bulletColor;
+//         pierceTrailParticles.startColor = bulletColor;
+//         ImpactParticles.startColor = bulletColor;
+
+//         // 默认显示普通轨迹
+//         normalTrailParticles.gameObject.SetActive(true);
+
+//         if (bounce)
+//         {
+//             bounceTrailParticles.gameObject.SetActive(true);
+//             normalTrailParticles.gameObject.SetActive(false);
+//             life = 1f;
+//             speed = 20f;
+//         }
+
+//         if (piercing)
+//         {
+//             pierceTrailParticles.gameObject.SetActive(true);
+//             normalTrailParticles.gameObject.SetActive(false);
+//             speed = 40f;
+//         }
+//     }
+
+//     void Update()
+//     {
+//         if (hasHit) return;
+
+//         timer += Time.deltaTime;
+//         if (timer >= life)
+//         {
+//             Dissipate();
+//             return;
+//         }
+
+//         // 计算移动
+//         velocity = transform.forward;
+//         velocity.y = 0f;
+//         velocity = velocity.normalized * speed;
+//         newPos += velocity * Time.deltaTime;
+
+//         // 射线检测
+//         direction = newPos - oldPos;
+//         float distance = direction.magnitude;
+//         if (distance > 0f)
+//         {
+//             RaycastHit[] hits = Physics.RaycastAll(oldPos, direction, distance);
+//             for (int i = 0; i < hits.Length; i++)
+//             {
+//                 RaycastHit hit = hits[i];
+//                 if (ShouldIgnoreHit(hit)) continue;
+//                 OnHit(hit);
+//                 lastHit = hit;
+//                 if (hasHit)
+//                 {
+//                     newPos = hit.point;
+//                     break;
+//                 }
+//             }
+//         }
+
+//         oldPos = transform.position;
+//         transform.position = newPos;
+//     }
+
+//     bool ShouldIgnoreHit(RaycastHit hit)
+//     {
+//         return lastHit.collider == hit.collider && lastHit.point == hit.point;
+//     }
+
+//     void OnHit(RaycastHit hit)
+//     {
+//         Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
+
+//         // 环境碰撞
+//         if (hit.transform.CompareTag("Environment"))
+//         {
+//             newPos = hit.point;
+//             ImpactParticles.transform.position = hit.point;
+//             ImpactParticles.transform.rotation = rotation;
+//             ImpactParticles.Play();
+
+//             if (bounce)
+//             {
+//                 Vector3 reflect = Vector3.Reflect(direction, hit.normal);
+//                 transform.forward = reflect;
+//                 bulletAudio.clip = bounceSound;
+//                 bulletAudio.pitch = Random.Range(0.8f, 1.2f);
+//                 bulletAudio.Play();
+//             }
+//             else
+//             {
+//                 hasHit = true;
+//                 bulletAudio.clip = hitSound;
+//                 bulletAudio.volume = 0.5f;
+//                 bulletAudio.pitch = Random.Range(1.2f, 1.3f);
+//                 bulletAudio.Play();
+//                 DelayedDestroy();
+//             }
+//             return;
+//         }
+
+//         // 玩家碰撞
+//         var ph = hit.collider.GetComponent<PlayerHealth>();
+//         if (ph != null)
+//         {
+//             ImpactParticles.transform.position = hit.point;
+//             ImpactParticles.transform.rotation = rotation;
+//             ImpactParticles.Play();
+
+//             var pv = hit.collider.GetComponent<PhotonView>();
+//             if (pv != null && PhotonNetwork.IsConnectedAndReady)
+//             {
+//                 // 在目标客户端执行扣血
+//                 pv.RPC("TakeDamage", pv.Owner, damage);
+//             }
+//             else
+//             {
+//                 // 单人模式本地调用
+//                 ph.TakeDamage(damage);
+//             }
+
+//             if (!piercing)
+//             {
+//                 hasHit = true;
+//                 DelayedDestroy();
+//             }
+
+//             bulletAudio.clip = hitSound;
+//             bulletAudio.volume = 0.5f;
+//             bulletAudio.pitch = Random.Range(1.2f, 1.3f);
+//             bulletAudio.Play();
+//             return;
+//         }
+
+//         // 敌人碰撞
+//         if (hit.transform.CompareTag("Enemy"))
+//         {
+//             ImpactParticles.transform.position = hit.point;
+//             ImpactParticles.transform.rotation = rotation;
+//             ImpactParticles.Play();
+
+//             EnemyHealth enemyHealth = hit.collider.GetComponent<EnemyHealth>();
+//             if (enemyHealth != null)
+//             {
+//                 enemyHealth.TakeDamage(damage, hit.point);
+//             }
+
+//             if (!piercing)
+//             {
+//                 hasHit = true;
+//                 DelayedDestroy();
+//             }
+
+//             bulletAudio.clip = hitSound;
+//             bulletAudio.volume = 0.5f;
+//             bulletAudio.pitch = Random.Range(1.2f, 1.3f);
+//             bulletAudio.Play();
+//             return;
+//         }
+//     }
+
+//     void Dissipate()
+//     {
+//         normalTrailParticles.enableEmission = false;
+//         normalTrailParticles.transform.parent = null;
+//         Destroy(normalTrailParticles.gameObject, normalTrailParticles.duration);
+
+//         if (bounce)
+//         {
+//             bounceTrailParticles.enableEmission = false;
+//             bounceTrailParticles.transform.parent = null;
+//             Destroy(bounceTrailParticles.gameObject, bounceTrailParticles.duration);
+//         }
+
+//         if (piercing)
+//         {
+//             pierceTrailParticles.enableEmission = false;
+//             pierceTrailParticles.transform.parent = null;
+//             Destroy(pierceTrailParticles.gameObject, pierceTrailParticles.duration);
+//         }
+
+//         Destroy(gameObject);
+//     }
+
+//     void DelayedDestroy()
+//     {
+//         normalTrailParticles.gameObject.SetActive(false);
+//         if (bounce)    bounceTrailParticles.gameObject.SetActive(false);
+//         if (piercing)  pierceTrailParticles.gameObject.SetActive(false);
+//         Destroy(gameObject, hitSound.length);
+//     }
+// }
+
+// Bullet.cs
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
 using Photon.Pun;
 
 public class Bullet : MonoBehaviourPun
 {
-    // 子弹速度 
-    public float speed = 600.0f;
-    // 子弹生存时间
+    public float speed = 600f;
     public float life = 3f;
-    // 粒子系统
     public ParticleSystem normalTrailParticles;
     public ParticleSystem bounceTrailParticles;
     public ParticleSystem pierceTrailParticles;
     public ParticleSystem ImpactParticles;
-    // 伤害值
     public int damage = 20;
-    // 穿透 / 反弹
     public bool piercing = false;
     public bool bounce = false;
-    // 子弹颜色
     public Color bulletColor;
     public AudioClip bounceSound;
     public AudioClip hitSound;
 
-    // 内部状态
     private Vector3 velocity;
     private Vector3 newPos;
     private Vector3 oldPos;
@@ -321,27 +554,21 @@ public class Bullet : MonoBehaviourPun
         newPos = transform.position;
         oldPos = newPos;
 
-        // 设置粒子颜色
         normalTrailParticles.startColor = bulletColor;
         bounceTrailParticles.startColor = bulletColor;
         pierceTrailParticles.startColor = bulletColor;
         ImpactParticles.startColor = bulletColor;
 
-        // 默认显示普通轨迹
-        normalTrailParticles.gameObject.SetActive(true);
-
+        normalTrailParticles.gameObject.SetActive(!bounce && !piercing);
         if (bounce)
         {
             bounceTrailParticles.gameObject.SetActive(true);
-            normalTrailParticles.gameObject.SetActive(false);
-            life = 1f;
             speed = 20f;
+            life  = 1f;
         }
-
         if (piercing)
         {
             pierceTrailParticles.gameObject.SetActive(true);
-            normalTrailParticles.gameObject.SetActive(false);
             speed = 40f;
         }
     }
@@ -357,22 +584,20 @@ public class Bullet : MonoBehaviourPun
             return;
         }
 
-        // 计算移动
         velocity = transform.forward;
         velocity.y = 0f;
         velocity = velocity.normalized * speed;
         newPos += velocity * Time.deltaTime;
 
-        // 射线检测
         direction = newPos - oldPos;
         float distance = direction.magnitude;
         if (distance > 0f)
         {
             RaycastHit[] hits = Physics.RaycastAll(oldPos, direction, distance);
-            for (int i = 0; i < hits.Length; i++)
+            foreach (var hit in hits)
             {
-                RaycastHit hit = hits[i];
-                if (ShouldIgnoreHit(hit)) continue;
+                if (lastHit.collider == hit.collider && lastHit.point == hit.point)
+                    continue;
                 OnHit(hit);
                 lastHit = hit;
                 if (hasHit)
@@ -387,23 +612,17 @@ public class Bullet : MonoBehaviourPun
         transform.position = newPos;
     }
 
-    bool ShouldIgnoreHit(RaycastHit hit)
-    {
-        return lastHit.collider == hit.collider && lastHit.point == hit.point;
-    }
-
     void OnHit(RaycastHit hit)
     {
         Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
 
-        // 环境碰撞
+        // 环境
         if (hit.transform.CompareTag("Environment"))
         {
             newPos = hit.point;
             ImpactParticles.transform.position = hit.point;
             ImpactParticles.transform.rotation = rotation;
             ImpactParticles.Play();
-
             if (bounce)
             {
                 Vector3 reflect = Vector3.Reflect(direction, hit.normal);
@@ -424,10 +643,13 @@ public class Bullet : MonoBehaviourPun
             return;
         }
 
-        // 玩家碰撞
+        // 玩家
         var ph = hit.collider.GetComponent<PlayerHealth>();
         if (ph != null)
         {
+            // 已死的玩家不再受击
+            if (!ph.IsAlive()) return;
+
             ImpactParticles.transform.position = hit.point;
             ImpactParticles.transform.rotation = rotation;
             ImpactParticles.Play();
@@ -435,12 +657,10 @@ public class Bullet : MonoBehaviourPun
             var pv = hit.collider.GetComponent<PhotonView>();
             if (pv != null && PhotonNetwork.IsConnectedAndReady)
             {
-                // 在目标客户端执行扣血
                 pv.RPC("TakeDamage", pv.Owner, damage);
             }
             else
             {
-                // 单人模式本地调用
                 ph.TakeDamage(damage);
             }
 
@@ -457,18 +677,16 @@ public class Bullet : MonoBehaviourPun
             return;
         }
 
-        // 敌人碰撞
+        // 敌人
         if (hit.transform.CompareTag("Enemy"))
         {
             ImpactParticles.transform.position = hit.point;
             ImpactParticles.transform.rotation = rotation;
             ImpactParticles.Play();
 
-            EnemyHealth enemyHealth = hit.collider.GetComponent<EnemyHealth>();
+            var enemyHealth = hit.collider.GetComponent<EnemyHealth>();
             if (enemyHealth != null)
-            {
                 enemyHealth.TakeDamage(damage, hit.point);
-            }
 
             if (!piercing)
             {

@@ -457,6 +457,205 @@
 //         healthSliderBackground.value = currentHealth;
 //     }
 // }
+// using UnityEngine;
+// using UnityEngine.UI;
+// using Photon.Pun;
+// using System.Collections;
+
+// public class PlayerHealth : MonoBehaviourPun
+// {
+//     [Header("数值设置")]
+//     public int   startingHealth           = 100;
+//     public float invulnerabilityTime      = 1f;
+//     public float timeAfterLastDamage      = 1f;
+
+//     [Header("UI 引用")]
+//     public Slider healthSliderForeground;
+//     public Slider healthSliderBackground;
+//     public Image  damageImage;
+
+//     [Header("音效 / 动画")]
+//     public AudioClip deathClip;
+//     public float     flashSpeed           = 5f;
+//     public Color     flashColor           = new Color(1f, 0f, 0f, 0.35f);
+
+//     [HideInInspector] public int currentHealth;
+
+//     private Animator     anim;
+//     private AudioSource  playerAudio;
+//     private PlayerMovement playerMovement;
+//     private PlayerShooting playerShooting;
+
+//     private bool   isDead;
+//     private bool   damaged;
+//     private float  invulnerableTimer;
+//     private float  backgroundLerpTimer;
+
+//     void Awake()
+//     {
+//         // 仅本地玩家实例执行后续逻辑
+//         if (photonView != null && !photonView.IsMine)
+//         {
+//             enabled = false;
+//             return;
+//         }
+
+//         // 获取组件引用
+//         anim           = GetComponent<Animator>();
+//         playerAudio    = GetComponent<AudioSource>();
+//         playerMovement = GetComponent<PlayerMovement>();
+//         playerShooting = GetComponent<PlayerShooting>();
+
+//         // 初始化数值
+//         invulnerableTimer = invulnerabilityTime;
+//         currentHealth     = startingHealth;
+
+//         // 自动寻找 HUD 引用（如果 Inspector 中未赋值）
+//         AutoFindUIRefs();
+//     }
+
+//     void Start()
+//     {
+//         // 初始化血条 Slider
+//         if (healthSliderForeground != null)
+//         {
+//             healthSliderForeground.maxValue = startingHealth;
+//             healthSliderForeground.value    = startingHealth;
+//         }
+
+//         if (healthSliderBackground != null)
+//         {
+//             healthSliderBackground.maxValue = startingHealth;
+//             healthSliderBackground.value    = startingHealth;
+//         }
+
+//         // 确保受伤闪光初始透明
+//         if (damageImage != null)
+//             damageImage.color = Color.clear;
+//     }
+
+//     void Update()
+//     {
+//         if (!enabled) return;
+
+//         // 处理受伤闪红效果
+//         if (damageImage != null)
+//         {
+//             damageImage.color = damaged
+//                 ? flashColor
+//                 : Color.Lerp(damageImage.color, Color.clear, flashSpeed * Time.deltaTime);
+//         }
+//         damaged = false;
+
+//         // 计时平滑背景血条
+//         invulnerableTimer   += Time.deltaTime;
+//         backgroundLerpTimer += Time.deltaTime;
+
+//         if (healthSliderBackground != null && backgroundLerpTimer >= timeAfterLastDamage)
+//         {
+//             healthSliderBackground.value = Mathf.Lerp(
+//                 healthSliderBackground.value,
+//                 healthSliderForeground.value,
+//                 2f * Time.deltaTime
+//             );
+//         }
+//     }
+
+//     [PunRPC]
+//     public void TakeDamage(int amount)
+//     {
+//         // 仅本地玩家实例生效
+//         if (photonView != null && !photonView.IsMine)
+//             return;
+
+//         // 可加入无敌帧判定：if (invulnerableTimer < invulnerabilityTime) return;
+//         invulnerableTimer   = 0f;
+//         backgroundLerpTimer = 0f;
+//         damaged             = true;
+
+//         currentHealth = Mathf.Clamp(currentHealth - amount, 0, startingHealth);
+
+//         if (healthSliderForeground != null)
+//             healthSliderForeground.value = currentHealth;
+
+//         if (healthSliderBackground != null)
+//             StartCoroutine(SmoothBackground());
+
+//         // 播放受击音效
+//         playerAudio?.Play();
+
+//         if (currentHealth <= 0 && !isDead)
+//             Death();
+//     }
+
+//     public void AddHealth(int amount)
+//     {
+//         currentHealth = Mathf.Min(currentHealth + amount, startingHealth);
+
+//         if (healthSliderForeground != null)
+//             healthSliderForeground.value = currentHealth;
+//         if (healthSliderBackground != null)
+//             healthSliderBackground.value = currentHealth;
+//     }
+
+//     /// <summary>
+//     /// 判断是否还活着
+//     /// </summary>
+//     public bool IsAlive()
+//     {
+//         return currentHealth > 0;
+//     }
+
+//     void Death()
+//     {
+//         isDead = true;
+
+//         // 禁用移动和射击
+//         if (playerMovement != null)
+//             playerMovement.enabled = false;
+//         if (playerShooting != null)
+//             playerShooting.enabled = false;
+
+//         // 播放死亡动画和音效
+//         anim?.SetTrigger("Die");
+//         playerAudio.clip = deathClip;
+//         playerAudio.Play();
+//     }
+
+//     void AutoFindUIRefs()
+//     {
+//         if ((healthSliderForeground == null || healthSliderBackground == null) && FindObjectOfType<PlayerHUD>() is PlayerHUD hud)
+//         {
+//             if (healthSliderForeground == null)
+//                 healthSliderForeground = hud.foreground;
+//             if (healthSliderBackground == null)
+//                 healthSliderBackground = hud.background;
+//         }
+
+//         if (damageImage == null && GameObject.Find("DamageImage") is GameObject imgObj)
+//         {
+//             damageImage = imgObj.GetComponent<Image>();
+//         }
+//     }
+
+//     IEnumerator SmoothBackground()
+//     {
+//         float elapsed = 0f;
+//         float duration = 0.5f;
+//         float startVal = healthSliderBackground.value;
+
+//         while (elapsed < duration)
+//         {
+//             elapsed += Time.deltaTime;
+//             healthSliderBackground.value = Mathf.Lerp(startVal, currentHealth, elapsed / duration);
+//             yield return null;
+//         }
+
+//         healthSliderBackground.value = currentHealth;
+//     }
+// }
+
+// PlayerHealth.cs
 using UnityEngine;
 using UnityEngine.UI;
 using Photon.Pun;
@@ -465,9 +664,9 @@ using System.Collections;
 public class PlayerHealth : MonoBehaviourPun
 {
     [Header("数值设置")]
-    public int   startingHealth           = 100;
-    public float invulnerabilityTime      = 1f;
-    public float timeAfterLastDamage      = 1f;
+    public int   startingHealth      = 100;
+    public float invulnerabilityTime = 1f;
+    public float timeAfterLastDamage = 1f;
 
     [Header("UI 引用")]
     public Slider healthSliderForeground;
@@ -476,120 +675,112 @@ public class PlayerHealth : MonoBehaviourPun
 
     [Header("音效 / 动画")]
     public AudioClip deathClip;
-    public float     flashSpeed           = 5f;
-    public Color     flashColor           = new Color(1f, 0f, 0f, 0.35f);
+    public float     flashSpeed      = 5f;
+    public Color     flashColor      = new Color(1f, 0f, 0f, 0.35f);
 
     [HideInInspector] public int currentHealth;
 
-    private Animator     anim;
-    private AudioSource  playerAudio;
-    private PlayerMovement playerMovement;
-    private PlayerShooting playerShooting;
+    Animator       anim;
+    AudioSource    playerAudio;
+    PlayerMovement playerMovement;
+    PlayerShooting playerShooting;
 
-    private bool   isDead;
-    private bool   damaged;
-    private float  invulnerableTimer;
-    private float  backgroundLerpTimer;
+    bool   isDead;
+    bool   damaged;
+    float  invulnerableTimer;
+    float  backgroundLerpTimer;
 
     void Awake()
     {
-        // 仅本地玩家实例执行后续逻辑
-        if (photonView != null && !photonView.IsMine)
-        {
-            enabled = false;
-            return;
-        }
+        // 先初始化，无论单/多模式都要加载
+        anim            = GetComponent<Animator>();
+        playerAudio     = GetComponent<AudioSource>();
+        playerMovement  = GetComponent<PlayerMovement>();
+        playerShooting  = GetComponent<PlayerShooting>();
 
-        // 获取组件引用
-        anim           = GetComponent<Animator>();
-        playerAudio    = GetComponent<AudioSource>();
-        playerMovement = GetComponent<PlayerMovement>();
-        playerShooting = GetComponent<PlayerShooting>();
-
-        // 初始化数值
         invulnerableTimer = invulnerabilityTime;
         currentHealth     = startingHealth;
 
-        // 自动寻找 HUD 引用（如果 Inspector 中未赋值）
         AutoFindUIRefs();
     }
 
     void Start()
     {
-        // 初始化血条 Slider
+        // 初始化血条
         if (healthSliderForeground != null)
         {
             healthSliderForeground.maxValue = startingHealth;
             healthSliderForeground.value    = startingHealth;
         }
-
         if (healthSliderBackground != null)
         {
             healthSliderBackground.maxValue = startingHealth;
             healthSliderBackground.value    = startingHealth;
         }
-
-        // 确保受伤闪光初始透明
         if (damageImage != null)
             damageImage.color = Color.clear;
     }
 
     void Update()
     {
-        if (!enabled) return;
-
-        // 处理受伤闪红效果
-        if (damageImage != null)
+        // 仅本地玩家处理屏幕闪红
+        if (photonView.IsMine)
         {
-            damageImage.color = damaged
-                ? flashColor
-                : Color.Lerp(damageImage.color, Color.clear, flashSpeed * Time.deltaTime);
-        }
-        damaged = false;
+            if (damageImage != null)
+                damageImage.color = damaged
+                    ? flashColor
+                    : Color.Lerp(damageImage.color, Color.clear, flashSpeed * Time.deltaTime);
+            damaged = false;
 
-        // 计时平滑背景血条
-        invulnerableTimer   += Time.deltaTime;
-        backgroundLerpTimer += Time.deltaTime;
+            invulnerableTimer   += Time.deltaTime;
+            backgroundLerpTimer += Time.deltaTime;
 
-        if (healthSliderBackground != null && backgroundLerpTimer >= timeAfterLastDamage)
-        {
-            healthSliderBackground.value = Mathf.Lerp(
-                healthSliderBackground.value,
-                healthSliderForeground.value,
-                2f * Time.deltaTime
-            );
+            if (healthSliderBackground != null && backgroundLerpTimer >= timeAfterLastDamage)
+            {
+                healthSliderBackground.value = Mathf.Lerp(
+                    healthSliderBackground.value,
+                    healthSliderForeground.value,
+                    2f * Time.deltaTime
+                );
+            }
         }
     }
 
+    /// <summary>
+    /// 扣血：本地玩家执行，并在死亡时同步给远程客户端
+    /// </summary>
     [PunRPC]
     public void TakeDamage(int amount)
     {
-        // 仅本地玩家实例生效
-        if (photonView != null && !photonView.IsMine)
-            return;
+        if (!photonView.IsMine) return;
 
-        // 可加入无敌帧判定：if (invulnerableTimer < invulnerabilityTime) return;
         invulnerableTimer   = 0f;
         backgroundLerpTimer = 0f;
         damaged             = true;
-
-        currentHealth = Mathf.Clamp(currentHealth - amount, 0, startingHealth);
+        currentHealth       = Mathf.Clamp(currentHealth - amount, 0, startingHealth);
 
         if (healthSliderForeground != null)
             healthSliderForeground.value = currentHealth;
-
         if (healthSliderBackground != null)
             StartCoroutine(SmoothBackground());
 
-        // 播放受击音效
         playerAudio?.Play();
 
         if (currentHealth <= 0 && !isDead)
+        {
             Death();
+            photonView.RPC("RPC_SyncDeath", RpcTarget.OthersBuffered);
+        }
     }
 
+    /// <summary>
+    /// 恢复血量：供 Pickup 脚本调用
+    /// </summary>
     public void AddHealth(int amount)
     {
+        // 多人模式下，只在本地玩家实例生效
+        if (photonView != null && !photonView.IsMine) return;
+
         currentHealth = Mathf.Min(currentHealth + amount, startingHealth);
 
         if (healthSliderForeground != null)
@@ -599,58 +790,63 @@ public class PlayerHealth : MonoBehaviourPun
     }
 
     /// <summary>
-    /// 判断是否还活着
+    /// 同步远程死亡动画与碰撞禁用
     /// </summary>
-    public bool IsAlive()
+    [PunRPC]
+    void RPC_SyncDeath()
     {
-        return currentHealth > 0;
+        if (isDead) return;
+        isDead = true;
+        anim?.SetTrigger("Die");
+        var col = GetComponent<Collider>();
+        if (col != null) col.enabled = false;
     }
 
     void Death()
     {
         isDead = true;
-
-        // 禁用移动和射击
-        if (playerMovement != null)
-            playerMovement.enabled = false;
-        if (playerShooting != null)
-            playerShooting.enabled = false;
-
-        // 播放死亡动画和音效
+        if (playerMovement != null)  playerMovement.enabled = false;
+        if (playerShooting != null)  playerShooting.enabled = false;
         anim?.SetTrigger("Die");
         playerAudio.clip = deathClip;
         playerAudio.Play();
+        var col = GetComponent<Collider>();
+        if (col != null) col.enabled = false;
+    }
+
+    /// <summary>
+    /// 检查是否仍存活
+    /// </summary>
+    public bool IsAlive()
+    {
+        return !isDead && currentHealth > 0;
     }
 
     void AutoFindUIRefs()
     {
-        if ((healthSliderForeground == null || healthSliderBackground == null) && FindObjectOfType<PlayerHUD>() is PlayerHUD hud)
+        if ((healthSliderForeground == null || healthSliderBackground == null)
+            && FindObjectOfType<PlayerHUD>() is PlayerHUD hud)
         {
             if (healthSliderForeground == null)
                 healthSliderForeground = hud.foreground;
             if (healthSliderBackground == null)
                 healthSliderBackground = hud.background;
         }
-
         if (damageImage == null && GameObject.Find("DamageImage") is GameObject imgObj)
-        {
             damageImage = imgObj.GetComponent<Image>();
-        }
     }
 
     IEnumerator SmoothBackground()
     {
-        float elapsed = 0f;
-        float duration = 0.5f;
+        float elapsed = 0f, duration = 0.5f;
         float startVal = healthSliderBackground.value;
-
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             healthSliderBackground.value = Mathf.Lerp(startVal, currentHealth, elapsed / duration);
             yield return null;
         }
-
         healthSliderBackground.value = currentHealth;
     }
 }
+
