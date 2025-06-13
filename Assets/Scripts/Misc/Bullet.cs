@@ -1,55 +1,32 @@
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
+using Photon.Pun;
 
-public class Bullet : MonoBehaviour
+public class Bullet : MonoBehaviourPun
 {
-    //×Óµ¯ËÙ¶È 
-    public float speed = 600.0f;
-
-    //×Óµ¯Éú´æÊ±¼äÎª3Ãë
-    public float life = 3;
-    //ÆÕÍ¨µÄÀı×ÓĞ§¹û
+    public float speed = 600f;
+    public float life = 3f;
     public ParticleSystem normalTrailParticles;
-    //·´µ¯µÄÀı×ÓĞ§¹û
     public ParticleSystem bounceTrailParticles;
-    //´©Í¸Àı×ÓĞ§¹û
     public ParticleSystem pierceTrailParticles;
-    //×éºÏÀı×ÓĞ§¹û
     public ParticleSystem ImpactParticles;
 
+    [Tooltip("å­å¼¹é€ æˆçš„ä¼¤å®³ï¼ˆå¤šäººæ¨¡å¼ä¸‹ç”± PlayerShooting èµ‹å€¼ä¸º 6ï¼‰")]
     public int damage = 20;
 
-    //ÊÇ·ñÎª´©Í¸µ¯
     public bool piercing = false;
-    //ÊÇ·ñÎª·´µ¯µ¯
-    public bool bounce = false;
-
-    //×Óµ¯ÑÕÉ«
+    public bool bounce    = false;
     public Color bulletColor;
     public AudioClip bounceSound;
     public AudioClip hitSound;
 
-    //ËÙ¶È
-    Vector3 velocity;
-    //Á¦Á¿
-    Vector3 force;
-    //ĞÂÎ»ÖÃ 
-    Vector3 newPos;
-    //¾ÉÎ»ÖÃ
-    Vector3 oldPos;
-    //·½Ïò
-    Vector3 direction;
-
-    //ÊÇ·ñ»÷ÖĞÄ¿±ê
-    bool hasHit = false;
-
-    RaycastHit lastHit;
-
-    // Reference to the audio source.
-    AudioSource bulletAudio;
-
-    float timer;
+    private Vector3   velocity;
+    private Vector3   newPos;
+    private Vector3   oldPos;
+    private Vector3   direction;
+    private bool      hasHit = false;
+    private RaycastHit lastHit;
+    private AudioSource bulletAudio;
+    private float      timer;
 
     void Awake()
     {
@@ -61,87 +38,55 @@ public class Bullet : MonoBehaviour
         newPos = transform.position;
         oldPos = newPos;
 
-        // Set our particle colors.
+        // è®¾ç½®ç²’å­é¢œè‰²
         normalTrailParticles.startColor = bulletColor;
         bounceTrailParticles.startColor = bulletColor;
         pierceTrailParticles.startColor = bulletColor;
         ImpactParticles.startColor = bulletColor;
 
-        //Ò»¿ªÊ¼µÄÊ±ºòÊ¹ÓÃÄ¬ÈÏµÄÀı×ÓÏµÍ³
-        normalTrailParticles.gameObject.SetActive(true);
-
-        //·´µ¯×Óµ¯µÄ»°£¬ÉúÃüÎª1£¬ËÙ¶ÈÎª20
+        normalTrailParticles.gameObject.SetActive(!bounce && !piercing);
         if (bounce)
         {
             bounceTrailParticles.gameObject.SetActive(true);
-            normalTrailParticles.gameObject.SetActive(false);
-            life = 1;
-            speed = 20;
+            speed = 20f;
+            life  = 1f;
         }
-
-        //´©Í¸µ¯µÄ»°£¬ËÙ¶ÈÎª40
         if (piercing)
         {
             pierceTrailParticles.gameObject.SetActive(true);
-            normalTrailParticles.gameObject.SetActive(false);
-
-            speed = 40;
+            speed = 40f;
         }
     }
 
     void Update()
     {
-        if (hasHit)
-        {
-            return;
-        }
+        if (hasHit) return;
 
-        // ¿ªÊ¼¼ÆÊ±
         timer += Time.deltaTime;
-
-        // ¿ªÊ¼Ïú»Ù×Óµ¯
         if (timer >= life)
         {
             Dissipate();
+            return;
         }
 
-        //ÏòÇ°ÃæµÄÎ»ÖÃÒÆ¶¯£¬YÖáÉÏ²»ĞèÒª²ÅÔÚËÙ¶È.
         velocity = transform.forward;
-        velocity.y = 0;
-        //ËÙ¶ÈºÍ·½Ïò¶¼Éè¶¨ºÃÁË
+        velocity.y = 0f;
         velocity = velocity.normalized * speed;
-
-        // ×Óµ¯ĞÂÎ»ÖÃ
         newPos += velocity * Time.deltaTime;
 
-        // ¼ì²â×Óµ¯Â·¾¶ÉÏÊÇ²»ÊÇÅö×²ÉÏÊ²Ã´¶«Î÷
         direction = newPos - oldPos;
         float distance = direction.magnitude;
-
-        if (distance > 0)
+        if (distance > 0f)
         {
             RaycastHit[] hits = Physics.RaycastAll(oldPos, direction, distance);
-
-
-            // ÕÒµ½µÚÒ»¸ö¿ÉÓÃµÄÅö×²µã
-            for (int i = 0; i < hits.Length; i++)
+            foreach (var hit in hits)
             {
-                RaycastHit hit = hits[i];
-
-                if (ShouldIgnoreHit(hit))
-                {
-                    //½áÊøµÄÑ­»·
+                if (lastHit.collider == hit.collider && lastHit.point == hit.point)
                     continue;
-                }
-
-                // Í¨ÖªÅö×²
                 OnHit(hit);
-
                 lastHit = hit;
-
                 if (hasHit)
                 {
-                    // ½áÊøËùÓĞµÄÑ­»·
                     newPos = hit.point;
                     break;
                 }
@@ -152,27 +97,12 @@ public class Bullet : MonoBehaviour
         transform.position = newPos;
     }
 
-    /*
-     * So we don't hit the same enemy twice with the same raycast when we have
-     * piercing shots. The shot can still bounce on a wall, come back and hit
-     * the enemy again if we have both bouncing and piercing shots.
-     */
-    bool ShouldIgnoreHit(RaycastHit hit)
-    {
-        if (lastHit.point == hit.point || lastHit.collider == hit.collider)
-            return true;
-
-        return false;
-    }
-
-    /**
-     * ×Óµ¯Åö×²µ½ÓÎÏ·¶ÔÏó½«·¢ÉúµÄÊÂÇé
-     */
     void OnHit(RaycastHit hit)
     {
         Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
 
-        if (hit.transform.tag == "Environment")
+        // 1) ç¯å¢ƒç¢°æ’
+        if (hit.transform.CompareTag("Environment"))
         {
             newPos = hit.point;
             ImpactParticles.transform.position = hit.point;
@@ -196,22 +126,34 @@ public class Bullet : MonoBehaviour
                 bulletAudio.Play();
                 DelayedDestroy();
             }
+            return;
         }
 
-        if (hit.transform.tag == "Enemy")
+        // 2) ç©å®¶ç¢°æ’
+        var ph = hit.collider.GetComponent<PlayerHealth>();
+        if (ph != null)
         {
+            if (!ph.IsAlive()) return;
+
             ImpactParticles.transform.position = hit.point;
             ImpactParticles.transform.rotation = rotation;
             ImpactParticles.Play();
 
-            // Try and find an EnemyHealth script on the gameobject hit.
-            EnemyHealth enemyHealth = hit.collider.GetComponent<EnemyHealth>();
+            var pv = hit.collider.GetComponent<PhotonView>();
+            if (pv != null && PhotonNetwork.IsConnectedAndReady)
+                pv.RPC("TakeDamage", pv.Owner, damage);
+            else
+                ph.TakeDamage(damage);
 
-            // If the EnemyHealth component exist...
-            if (enemyHealth != null)
+            // â€”â€” æ–°å¢ï¼šä»…ç”±æœ¬åœ°æ‹¥æœ‰æ­¤å­å¼¹çš„å®ä¾‹ä¸ŠæŠ¥å¾—åˆ†
+            if (photonView != null && photonView.IsMine)
             {
-                // ... the enemy should take damage.
-                enemyHealth.TakeDamage(damage, hit.point);
+                int shooter = photonView.OwnerActorNr;
+                NetScoreManager.Instance.photonView
+                    .RPC("RPC_AddScore",
+                         RpcTarget.MasterClient,
+                         shooter,
+                         damage);
             }
 
             if (!piercing)
@@ -224,53 +166,69 @@ public class Bullet : MonoBehaviour
             bulletAudio.volume = 0.5f;
             bulletAudio.pitch = Random.Range(1.2f, 1.3f);
             bulletAudio.Play();
+            return;
+        }
+
+        // 3) AI æ•Œäººç¢°æ’
+        if (hit.transform.CompareTag("Enemy"))
+        {
+            ImpactParticles.transform.position = hit.point;
+            ImpactParticles.transform.rotation = rotation;
+            ImpactParticles.Play();
+
+            var enemyHealth = hit.collider.GetComponent<EnemyHealth>();
+            if (enemyHealth != null)
+                enemyHealth.TakeDamage(damage, hit.point);
+
+            // â€”â€” åŒæ ·ä¸ŠæŠ¥ç»™å¾—åˆ†ç³»ç»Ÿï¼ˆå¦‚æœä½ å¸Œæœ›å‡»ä¸­æ•Œäººä¹Ÿè®¡åˆ†ï¼‰
+            if (photonView != null && photonView.IsMine)
+            {
+                int shooter = photonView.OwnerActorNr;
+                NetScoreManager.Instance.photonView
+                    .RPC("RPC_AddScore",
+                         RpcTarget.MasterClient,
+                         shooter,
+                         damage);
+            }
+
+            if (!piercing)
+            {
+                hasHit = true;
+                DelayedDestroy();
+            }
+
+            bulletAudio.clip = hitSound;
+            bulletAudio.volume = 0.5f;
+            bulletAudio.pitch = Random.Range(1.2f, 1.3f);
+            bulletAudio.Play();
+            return;
         }
     }
 
-    // Just a method for destroying the game object, but which
-    // first detaches the particle effect and leaves it for a
-    // second. Called if the bullet end its life in midair
-    // so we get an effect of the bullet fading out instead
-    // of disappearing immediately.
-    //×Óµ¯ÏûÉ¢µÄĞ§¹û
     void Dissipate()
     {
-        normalTrailParticles.enableEmission = false;
-        normalTrailParticles.transform.parent = null;
-        Destroy(normalTrailParticles.gameObject, normalTrailParticles.duration);
+        normalTrailParticles.Stop();
+        Destroy(normalTrailParticles.gameObject, normalTrailParticles.main.duration);
 
         if (bounce)
         {
-            bounceTrailParticles.enableEmission = false;
-            bounceTrailParticles.transform.parent = null;
-            Destroy(bounceTrailParticles.gameObject, bounceTrailParticles.duration);
+            bounceTrailParticles.Stop();
+            Destroy(bounceTrailParticles.gameObject, bounceTrailParticles.main.duration);
         }
-
         if (piercing)
         {
-            pierceTrailParticles.enableEmission = false;
-            pierceTrailParticles.transform.parent = null;
-            Destroy(pierceTrailParticles.gameObject, pierceTrailParticles.duration);
+            pierceTrailParticles.Stop();
+            Destroy(pierceTrailParticles.gameObject, pierceTrailParticles.main.duration);
         }
 
         Destroy(gameObject);
     }
 
-
-    /// <summary>
-    /// ÑÓ³ÙÏú»Ù
-    /// </summary>
     void DelayedDestroy()
     {
         normalTrailParticles.gameObject.SetActive(false);
-        if (bounce)
-        {
-            bounceTrailParticles.gameObject.SetActive(false);
-        }
-        if (piercing)
-        {
-            pierceTrailParticles.gameObject.SetActive(false);
-        }
+        if (bounce)   bounceTrailParticles.gameObject.SetActive(false);
+        if (piercing) pierceTrailParticles.gameObject.SetActive(false);
         Destroy(gameObject, hitSound.length);
     }
 }
