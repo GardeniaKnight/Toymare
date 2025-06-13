@@ -451,12 +451,28 @@ public class PhotonRoomService : MonoBehaviourPunCallbacks, IRoomService
         }
     }
 
+    // public override void OnJoinedRoom()
+    // {
+    //     Debug.Log($"[PhotonRoomService] 已加入房间：{PhotonNetwork.CurrentRoom.Name}");
+    //     OnJoined?.Invoke(PhotonNetwork.CurrentRoom.Name);
+    //     OnPlayerCountChanged?.Invoke(PhotonNetwork.CurrentRoom.PlayerCount);
+    // }
     public override void OnJoinedRoom()
     {
         Debug.Log($"[PhotonRoomService] 已加入房间：{PhotonNetwork.CurrentRoom.Name}");
+        // 如果房间已开始比赛，直接切场景
+        if (PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey("StartTime"))
+        {
+            Debug.Log("[PhotonRoomService] 房间已开始比赛，直接进入对战场景");
+            PhotonNetwork.LoadLevel("Game");
+            return;
+        }
+
+        // 否则正常留在 Lobby，通知 UI 已经加入
         OnJoined?.Invoke(PhotonNetwork.CurrentRoom.Name);
         OnPlayerCountChanged?.Invoke(PhotonNetwork.CurrentRoom.PlayerCount);
     }
+
 
     public override void OnJoinRoomFailed(short returnCode, string message)
     {

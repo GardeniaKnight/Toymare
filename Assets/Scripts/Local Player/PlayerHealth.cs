@@ -1,4 +1,3 @@
-// PlayerHealth.cs
 using UnityEngine;
 using UnityEngine.UI;
 using Photon.Pun;
@@ -35,7 +34,7 @@ public class PlayerHealth : MonoBehaviourPun
 
     void Awake()
     {
-        // 先初始化，无论单/多模式都要加载
+        // 初始化引用
         anim            = GetComponent<Animator>();
         playerAudio     = GetComponent<AudioSource>();
         playerMovement  = GetComponent<PlayerMovement>();
@@ -66,8 +65,10 @@ public class PlayerHealth : MonoBehaviourPun
 
     void Update()
     {
-        // 仅本地玩家处理屏幕闪红
-        if (photonView.IsMine)
+        // 仅本地玩家实例才做屏幕闪红等效果
+        // （在单人模式里，PhotonNetwork.InRoom==false，所以 this.photonView.IsMine 也不管用，
+        //  但我们仍然希望单人里走这块逻辑）
+        if (!PhotonNetwork.InRoom || photonView.IsMine)
         {
             if (damageImage != null)
                 damageImage.color = damaged
@@ -90,12 +91,18 @@ public class PlayerHealth : MonoBehaviourPun
     }
 
     /// <summary>
-    /// 扣血：本地玩家执行，并在死亡时同步给远程客户端
+    /// 扣血：单人模式下始终生效；多人模式下仅本地玩家实例生效
     /// </summary>
     [PunRPC]
     public void TakeDamage(int amount)
     {
-        if (!photonView.IsMine) return;
+        // 如果是在多人房间，且又不是本地玩家，就跳过
+        if (PhotonNetwork.InRoom && !photonView.IsMine)
+            return;
+
+        // 无敌帧逻辑
+        if (invulnerableTimer < invulnerabilityTime)
+            return;
 
         invulnerableTimer   = 0f;
         backgroundLerpTimer = 0f;
@@ -112,24 +119,26 @@ public class PlayerHealth : MonoBehaviourPun
         if (currentHealth <= 0 && !isDead)
         {
             Death();
-            photonView.RPC("RPC_SyncDeath", RpcTarget.OthersBuffered);
+            // 同步远程死亡效果
+            if (PhotonNetwork.InRoom)
+                photonView.RPC("RPC_SyncDeath", RpcTarget.OthersBuffered);
         }
     }
 
     /// <summary>
-    /// 恢复血量：供 Pickup 脚本调用
+    /// 恢复血量：单人模式下始终生效；多人模式下仅本地玩家实例生效
     /// </summary>
     public void AddHealth(int amount)
     {
-        // 多人模式下，只在本地玩家实例生效
-        if (photonView != null && !photonView.IsMine) return;
+        if (PhotonNetwork.InRoom && !photonView.IsMine)
+            return;
 
         currentHealth = Mathf.Min(currentHealth + amount, startingHealth);
 
         if (healthSliderForeground != null)
             healthSliderForeground.value = currentHealth;
         if (healthSliderBackground != null)
-            healthSliderBackground.value = currentHealth;
+            StartCoroutine(SmoothBackground());
     }
 
     /// <summary>
@@ -148,13 +157,17 @@ public class PlayerHealth : MonoBehaviourPun
     void Death()
     {
         isDead = true;
-        if (playerMovement != null)  playerMovement.enabled = false;
-        if (playerShooting != null)  playerShooting.enabled = false;
+        if (playerMovement != null) playerMovement.enabled = false;
+        if (playerShooting != null) playerShooting.enabled = false;
+
         anim?.SetTrigger("Die");
         playerAudio.clip = deathClip;
         playerAudio.Play();
+
         var col = GetComponent<Collider>();
         if (col != null) col.enabled = false;
+
+        // 单人模式下，GameOverManager 会在检测到 playerHealth.IsAlive()==false 后触发失败
     }
 
     /// <summary>
@@ -181,15 +194,15 @@ public class PlayerHealth : MonoBehaviourPun
 
     IEnumerator SmoothBackground()
     {
-        float elapsed = 0f, duration = 0.5f;
+        float elapsed  = 0f, total = 0.5f;
         float startVal = healthSliderBackground.value;
-        while (elapsed < duration)
+        while (elapsed < total)
         {
             elapsed += Time.deltaTime;
-            healthSliderBackground.value = Mathf.Lerp(startVal, currentHealth, elapsed / duration);
+            healthSliderBackground.value
+                = Mathf.Lerp(startVal, currentHealth, elapsed / total);
             yield return null;
         }
         healthSliderBackground.value = currentHealth;
     }
 }
-

@@ -11,10 +11,10 @@ public class ScoreboardUI : MonoBehaviour
     [Header("请在此处拖入你希望承载排行榜的 Canvas")]
     public Canvas parentCanvas;        // ← 新增：在 Inspector 指定父 Canvas
 
-    private Canvas           uiCanvas;
-    private GameObject       panel;
-    private GameObject       content;
-    private bool             isShowing  = false;
+    private Canvas uiCanvas;
+    private GameObject panel;
+    private GameObject content;
+    private bool isShowing = false;
     private List<GameObject> rowObjects = new List<GameObject>();
 
     void Awake()
@@ -68,7 +68,7 @@ public class ScoreboardUI : MonoBehaviour
         }
     }
 
-    void OnScoresUpdated(Dictionary<int,int> _)
+    void OnScoresUpdated(Dictionary<int, int> _)
     {
         if (isShowing)
             RefreshAndShow();
@@ -87,10 +87,10 @@ public class ScoreboardUI : MonoBehaviour
         rt.anchorMin = new Vector2(0.2f, 0.2f);
         rt.anchorMax = new Vector2(0.8f, 0.8f);
         rt.offsetMin = rt.offsetMax = Vector2.zero;
-        panel.GetComponent<Image>().color = new Color(0,0,0,0.6f);
+        panel.GetComponent<Image>().color = new Color(0, 0, 0, 0.6f);
         var vlg = panel.GetComponent<VerticalLayoutGroup>();
         vlg.spacing = 10;
-        vlg.padding = new RectOffset(20,20,20,20);
+        vlg.padding = new RectOffset(20, 20, 20, 20);
 
         // 2) 标题
         var header = new GameObject("Title", typeof(Text), typeof(LayoutElement));
@@ -112,7 +112,7 @@ public class ScoreboardUI : MonoBehaviour
         svRT.anchorMax = Vector2.one;
         svRT.offsetMin = new Vector2(0, -70);
         svRT.offsetMax = Vector2.zero;
-        sv.GetComponent<Image>().color = new Color(1,1,1,0);
+        sv.GetComponent<Image>().color = new Color(1, 1, 1, 0);
         sv.GetComponent<Mask>().showMaskGraphic = false;
         var scroll = sv.GetComponent<ScrollRect>();
         scroll.horizontal = false;
@@ -134,9 +134,9 @@ public class ScoreboardUI : MonoBehaviour
             typeof(ContentSizeFitter));
         content.transform.SetParent(vp.transform, false);
         var cRT = content.GetComponent<RectTransform>();
-        cRT.anchorMin = new Vector2(0,1);
+        cRT.anchorMin = new Vector2(0, 1);
         cRT.anchorMax = Vector2.one;
-        cRT.pivot = new Vector2(0.5f,1f);
+        cRT.pivot = new Vector2(0.5f, 1f);
         cRT.offsetMin = cRT.offsetMax = Vector2.zero;
         var cvlg = content.GetComponent<VerticalLayoutGroup>();
         cvlg.spacing = 5;
@@ -187,6 +187,15 @@ public class ScoreboardUI : MonoBehaviour
         }
 
         panel.SetActive(true);
+    }
+    
+    /// <summary>
+    /// 强制打开并刷新一次排行榜
+    /// </summary>
+    public void ForceShow()
+    {
+        isShowing = true;
+        RefreshAndShow();
     }
 
 }

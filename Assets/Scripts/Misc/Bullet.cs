@@ -1,5 +1,3 @@
-
-// Bullet.cs
 using UnityEngine;
 using Photon.Pun;
 
@@ -11,21 +9,24 @@ public class Bullet : MonoBehaviourPun
     public ParticleSystem bounceTrailParticles;
     public ParticleSystem pierceTrailParticles;
     public ParticleSystem ImpactParticles;
+
+    [Tooltip("子弹造成的伤害（多人模式下由 PlayerShooting 赋值为 6）")]
     public int damage = 20;
+
     public bool piercing = false;
-    public bool bounce = false;
+    public bool bounce    = false;
     public Color bulletColor;
     public AudioClip bounceSound;
     public AudioClip hitSound;
 
-    private Vector3 velocity;
-    private Vector3 newPos;
-    private Vector3 oldPos;
-    private Vector3 direction;
-    private bool hasHit = false;
+    private Vector3   velocity;
+    private Vector3   newPos;
+    private Vector3   oldPos;
+    private Vector3   direction;
+    private bool      hasHit = false;
     private RaycastHit lastHit;
     private AudioSource bulletAudio;
-    private float timer;
+    private float      timer;
 
     void Awake()
     {
@@ -37,6 +38,7 @@ public class Bullet : MonoBehaviourPun
         newPos = transform.position;
         oldPos = newPos;
 
+        // 设置粒子颜色
         normalTrailParticles.startColor = bulletColor;
         bounceTrailParticles.startColor = bulletColor;
         pierceTrailParticles.startColor = bulletColor;
@@ -99,13 +101,14 @@ public class Bullet : MonoBehaviourPun
     {
         Quaternion rotation = Quaternion.FromToRotation(Vector3.up, hit.normal);
 
-        // 环境
+        // 1) 环境碰撞
         if (hit.transform.CompareTag("Environment"))
         {
             newPos = hit.point;
             ImpactParticles.transform.position = hit.point;
             ImpactParticles.transform.rotation = rotation;
             ImpactParticles.Play();
+
             if (bounce)
             {
                 Vector3 reflect = Vector3.Reflect(direction, hit.normal);
@@ -126,11 +129,10 @@ public class Bullet : MonoBehaviourPun
             return;
         }
 
-        // 玩家
+        // 2) 玩家碰撞
         var ph = hit.collider.GetComponent<PlayerHealth>();
         if (ph != null)
         {
-            // 已死的玩家不再受击
             if (!ph.IsAlive()) return;
 
             ImpactParticles.transform.position = hit.point;
@@ -139,24 +141,20 @@ public class Bullet : MonoBehaviourPun
 
             var pv = hit.collider.GetComponent<PhotonView>();
             if (pv != null && PhotonNetwork.IsConnectedAndReady)
-            {
                 pv.RPC("TakeDamage", pv.Owner, damage);
-            }
             else
-            {
                 ph.TakeDamage(damage);
-            }
 
-            // —— 新增：向 MasterClient 报告得分
-            // this.photonView 是子弹的 PhotonView
-            int shooterActor = photonView.OwnerActorNr;
-            int dmg = damage;
-            NetScoreManager.Instance.photonView.RPC(
-                "RPC_AddScore",
-                RpcTarget.MasterClient,
-                shooterActor,
-                dmg
-            );
+            // —— 新增：仅由本地拥有此子弹的实例上报得分
+            if (photonView != null && photonView.IsMine)
+            {
+                int shooter = photonView.OwnerActorNr;
+                NetScoreManager.Instance.photonView
+                    .RPC("RPC_AddScore",
+                         RpcTarget.MasterClient,
+                         shooter,
+                         damage);
+            }
 
             if (!piercing)
             {
@@ -171,7 +169,7 @@ public class Bullet : MonoBehaviourPun
             return;
         }
 
-        // 敌人
+        // 3) AI 敌人碰撞
         if (hit.transform.CompareTag("Enemy"))
         {
             ImpactParticles.transform.position = hit.point;
@@ -181,6 +179,17 @@ public class Bullet : MonoBehaviourPun
             var enemyHealth = hit.collider.GetComponent<EnemyHealth>();
             if (enemyHealth != null)
                 enemyHealth.TakeDamage(damage, hit.point);
+
+            // —— 同样上报给得分系统（如果你希望击中敌人也计分）
+            if (photonView != null && photonView.IsMine)
+            {
+                int shooter = photonView.OwnerActorNr;
+                NetScoreManager.Instance.photonView
+                    .RPC("RPC_AddScore",
+                         RpcTarget.MasterClient,
+                         shooter,
+                         damage);
+            }
 
             if (!piercing)
             {
@@ -198,22 +207,18 @@ public class Bullet : MonoBehaviourPun
 
     void Dissipate()
     {
-        normalTrailParticles.enableEmission = false;
-        normalTrailParticles.transform.parent = null;
-        Destroy(normalTrailParticles.gameObject, normalTrailParticles.duration);
+        normalTrailParticles.Stop();
+        Destroy(normalTrailParticles.gameObject, normalTrailParticles.main.duration);
 
         if (bounce)
         {
-            bounceTrailParticles.enableEmission = false;
-            bounceTrailParticles.transform.parent = null;
-            Destroy(bounceTrailParticles.gameObject, bounceTrailParticles.duration);
+            bounceTrailParticles.Stop();
+            Destroy(bounceTrailParticles.gameObject, bounceTrailParticles.main.duration);
         }
-
         if (piercing)
         {
-            pierceTrailParticles.enableEmission = false;
-            pierceTrailParticles.transform.parent = null;
-            Destroy(pierceTrailParticles.gameObject, pierceTrailParticles.duration);
+            pierceTrailParticles.Stop();
+            Destroy(pierceTrailParticles.gameObject, pierceTrailParticles.main.duration);
         }
 
         Destroy(gameObject);
@@ -222,8 +227,8 @@ public class Bullet : MonoBehaviourPun
     void DelayedDestroy()
     {
         normalTrailParticles.gameObject.SetActive(false);
-        if (bounce)    bounceTrailParticles.gameObject.SetActive(false);
-        if (piercing)  pierceTrailParticles.gameObject.SetActive(false);
+        if (bounce)   bounceTrailParticles.gameObject.SetActive(false);
+        if (piercing) pierceTrailParticles.gameObject.SetActive(false);
         Destroy(gameObject, hitSound.length);
     }
 }
